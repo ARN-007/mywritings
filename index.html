@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Blog</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="dark">
+
+<header>
+  <h1>My Blog</h1>
+  <div>
+    <button id="themeToggle">🌙</button>
+    <button id="newPostBtn">＋ New Post</button>
+  </div>
+</header>
+
+<section id="postForm">
+  <input id="titleInput" placeholder="Post title">
+  <textarea id="contentInput" placeholder="Write something..."></textarea>
+  <div class="form-actions">
+   <button onclick="savePost()">Save</button>
+   <button class="cancel" onclick="cancelPost()">Cancel</button>
+  </div>
+
+</section>
+
+<main id="posts"></main>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal-overlay">
+  <div class="modal">
+    <h2>Delete Post?</h2>
+    <p>This action cannot be undone.</p>
+
+    <div class="modal-actions">
+      <button class="cancel" onclick="closeDeleteModal()">Cancel</button>
+      <button class="delete" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="script.js"></script>
+</body>
+</html>
