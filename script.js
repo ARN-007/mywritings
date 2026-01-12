@@ -26,13 +26,13 @@ newPostBtn.onclick = () => {
 function savePost() {
   if (!titleInput.value || !contentInput.value) return;
 
-  if (editIndex !== null) {
-    // EDIT MODE
+  const isEdit = editIndex !== null;
+
+  if (isEdit) {
     posts[editIndex].title = titleInput.value;
     posts[editIndex].content = contentInput.value;
     editIndex = null;
   } else {
-    // NEW POST
     posts.unshift({
       title: titleInput.value,
       content: contentInput.value,
@@ -43,15 +43,25 @@ function savePost() {
   titleInput.value = "";
   contentInput.value = "";
   postForm.classList.remove("show");
+
   save();
+  showToast(isEdit ? "Post updated" : "Post saved");
 }
 
 
+
 function renderPosts() {
+  if (posts.length === 0) {
+  postsDiv.innerHTML = `<p style="text-align:center; opacity:0.6;">
+    No posts yet. Click “New Post” to start writing ✍️
+  </p>`;
+  return;
+}
+
   postsDiv.innerHTML = "";
   posts.forEach((p, i) => {
     postsDiv.innerHTML += `
-    <div class="post">
+    <div class="post" data-index="${i}">
       <h3>${p.title}</h3>
       <p>${p.content}</p>
 
@@ -62,32 +72,44 @@ function renderPosts() {
 
 
       <input placeholder="Comment..." onkeydown="if(event.key==='Enter') comment(${i},this.value)">
-      ${p.comments.map(c => `
-        <div class="comment">
-          ${c.text}
-          <div class="reply">
-            ${c.replies.map(r => `<div>↳ ${r}</div>`).join("")}
-            <input placeholder="Reply..."
-              onkeydown="if(event.key==='Enter') reply(${i},'${c.text}',this.value)">
-          </div>
-        </div>
-      `).join("")}
+     ${p.comments.map(c => `
+  <div class="comment">
+    ${c.text}
+    <div class="reply">
+      ${c.replies.map(r => `<div>↳ ${r}</div>`).join("")}
+      <input placeholder="Reply..."
+        onkeydown="if(event.key==='Enter') reply(${i}, ${c.id}, this.value)">
+    </div>
+  </div>
+`).join("")}
+
     </div>`;
   });
 }
 
 
 function comment(i, text) {
-  if (!text) return;
-  posts[i].comments.push({ text, replies: [] });
+  if (!text.trim()) return;
+
+  posts[i].comments.push({
+    id: Date.now(),   // ✅ unique comment id
+    text,
+    replies: []
+  });
+
   save();
 }
 
-function reply(i, commentText, replyText) {
-  const c = posts[i].comments.find(c => c.text === commentText);
-  if (c && replyText) c.replies.push(replyText);
+
+function reply(i, commentId, replyText) {
+  if (!replyText.trim()) return;
+
+  const c = posts[i].comments.find(c => c.id === commentId);
+  if (c) c.replies.push(replyText);
+
   save();
 }
+
 
 function save() {
   localStorage.setItem("posts", JSON.stringify(posts));
@@ -100,9 +122,16 @@ function editPost(i) {
   titleInput.value = posts[i].title;
   contentInput.value = posts[i].content;
   editIndex = i;
+
   postForm.classList.add("show");
   titleInput.focus();
+
+  const postEl = document.querySelector(`.post[data-index="${i}"]`);
+  postEl.classList.add("editing");
+
+  setTimeout(() => postEl.classList.remove("editing"), 600);
 }
+
 
 function deletePost(i) {
   deleteIndex = i;
@@ -124,8 +153,40 @@ function closeDeleteModal() {
 
 function confirmDelete() {
   if (deleteIndex === null) return;
-  posts.splice(deleteIndex, 1);
-  deleteIndex = null;
-  deleteModal.classList.remove("show");
-  save();
+
+  const postEl = document.querySelector(
+    `.post[data-index="${deleteIndex}"]`
+  );
+
+  postEl.classList.add("removing");
+
+  setTimeout(() => {
+    posts.splice(deleteIndex, 1);
+    deleteIndex = null;
+    deleteModal.classList.remove("show");
+    save();
+    showToast("Post deleted");
+  }, 350);
 }
+
+const toast = document.getElementById("toast");
+
+function showToast(message) {
+  toast.textContent = message;
+  toast.classList.add("show");
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2000);
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    closeDeleteModal();
+    cancelPost();
+  }
+});
+
+deleteModal.addEventListener("click", (e) => {
+  if (e.target === deleteModal) closeDeleteModal();
+});
